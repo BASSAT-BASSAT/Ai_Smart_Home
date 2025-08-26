@@ -6,13 +6,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from supabase import create_client, Client
 
-# --- Configuration ---
+## Configuration
 MQTT_BROKER = "mosquitto"
 MQTT_PORT = 1883
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# --- MQTT Topics ---
+## MQTT Topics
 # List of all topics the service needs to listen to
 TOPICS_TO_SUBSCRIBE = [
     "home/commands/natural",   # For voice commands from the web app
@@ -23,7 +23,7 @@ TOPICS_TO_SUBSCRIBE = [
 # Topic this service publishes commands to
 VOICE_LIGHTS_TOPIC = "home/lights/voice"
 
-# --- LangChain & Gemini AI Setup ---
+## LangChain & Gemini AI Setup
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest")
 prompt = ChatPromptTemplate.from_messages([
     ("system", 
@@ -39,11 +39,11 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 chain = prompt | llm
 
-# --- Supabase Client Setup ---
+## Supabase Client Setup
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 print("Supabase client initialized.")
 
-# --- MQTT Functions ---
+## MQTT Functions
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print("LangChain Service: Successfully connected to MQTT Broker!")
@@ -59,7 +59,7 @@ def on_message(client, userdata, msg):
     payload = msg.payload.decode()
     print(f"\nReceived message on topic '{topic}': {payload}")
 
-    # --- ROUTE THE MESSAGE TO THE CORRECT LOGGER/HANDLER ---
+    ## Message Routing
     try:
         if topic == "home/commands/natural":
             handle_voice_command(payload)
@@ -125,7 +125,7 @@ def handle_voice_command(command_text):
     except Exception as e:
         print(f"An error occurred during AI processing: {e}")
 
-# --- Main script execution ---
+## Main script execution
 print("LangChain Service: Starting up...")
 time.sleep(5) 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

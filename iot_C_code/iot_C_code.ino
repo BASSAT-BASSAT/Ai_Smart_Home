@@ -4,10 +4,10 @@
 #include "LiquidCrystal_I2C.h"
 #include <ESP32Servo.h>
 
-// --- Configuration ---
+// Configuration
 #include "config.h" // Contains: const char* ssid, password, mqtt_server
 
-// --- MQTT TOPICS ---
+// MQTT Topics
 // Topic this ESP32 will listen to (subscribe)
 const char* VOICE_LIGHTS_TOPIC = "home/lights/voice";
 // Topics this ESP32 will talk on (publish)
@@ -15,7 +15,7 @@ const char* LIGHT_SENSOR_TOPIC = "esp32/sensors/light";
 const char* RAIN_SENSOR_TOPIC = "esp32/sensors/rain";
 const char* DOOR_EVENT_TOPIC = "esp32/events/door";
 
-// --- Hardware Pin Definitions ---
+// Hardware Pin Definitions
 #define LCD_SDA_PIN 21
 #define LCD_SCL_PIN 22
 #define DOOR_PIR_PIN 33
@@ -26,13 +26,13 @@ const char* DOOR_EVENT_TOPIC = "esp32/events/door";
 #define NIGHT_LIGHT_LED_PIN 27
 #define RAIN_SENSOR_PIN 32
 
-// --- Global Objects ---
+// Global Objects
 WiFiClient espClient;
 PubSubClient client(espClient);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 Servo doorServo;
 
-// --- State Management & Configuration ---
+// State Management & Configuration
 enum DoorState { CLOSED, OPEN };
 DoorState currentDoorState = CLOSED;
 String currentLcdMessage = "";
@@ -70,7 +70,7 @@ void loop() {
   int lightValue = analogRead(LDR_PIN);
   bool isRaining = (digitalRead(RAIN_SENSOR_PIN) == LOW);
 
-  // --- Servo Logic ---
+  // Servo Logic
   if (isMotionDetected && currentDoorState == CLOSED) {
     doorServo.write(90);
     currentDoorState = OPEN;
@@ -83,14 +83,14 @@ void loop() {
     currentDoorState = CLOSED;
   }
 
-  // --- Automatic Night Light Logic ---
+  // Automatic Night Light Logic
   if (lightValue < lightThreshold) {
     digitalWrite(NIGHT_LIGHT_LED_PIN, HIGH);
   } else {
     digitalWrite(NIGHT_LIGHT_LED_PIN, LOW);
   }
 
-  // --- LCD Logic with Priority ---
+  // LCD Logic with Priority
   String newMessage = "";
   if (isMotionDetected) { newMessage = "Welcome Home!"; }
   else if (isRaining) { newMessage = "It's Raining!"; }
@@ -102,7 +102,7 @@ void loop() {
     currentLcdMessage = newMessage;
   }
 
-  // --- Publish all sensor data to Supabase periodically ---
+  // Publish all sensor data to Supabase periodically
   if (millis() - lastSensorPublishTime > sensorPublishInterval) {
     lastSensorPublishTime = millis(); // Reset the timer
 
@@ -118,7 +118,7 @@ void loop() {
   }
 }
 
-// --- Helper Functions ---
+// Helper Functions
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String message;

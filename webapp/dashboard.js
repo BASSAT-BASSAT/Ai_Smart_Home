@@ -1,17 +1,17 @@
-// --- Supabase Client Initialization ---
+// Supabase Client Initialization
 const SUPABASE_URL = 'https://kxqmvprrpodgonxeikuh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cW12cHJycG9kZ29ueGVpa3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTk2MzksImV4cCI6MjA3MTY3NTYzOX0.eqtxurvLupES-c9vrhkjqkcwHyDytvDkttdpGPB_Si0';
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- Get HTML Elements ---
+// Get HTML Elements
 const userEmailSpan = document.getElementById('user-email');
 const signOutButton = document.getElementById('signout-button');
 const commandDisplay = document.getElementById('command-display');
 const micButton = document.getElementById('mic-button');
 
-// --- Page Protection & User Info ---
+// Page Protection & User Info
 // This function runs as soon as the page loads
 (async () => {
     const { data, error } = await supabaseClient.auth.getUser();
@@ -27,7 +27,7 @@ const micButton = document.getElementById('mic-button');
     }
 })();
 
-// --- Sign Out Logic ---
+// Sign Out Logic
 signOutButton.addEventListener('click', async () => {
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
@@ -39,7 +39,7 @@ signOutButton.addEventListener('click', async () => {
 });
 
 
-// --- MQTT & Voice Control Logic (from our original proof-of-concept) ---
+// MQTT & Voice Control Logic
 
 // Configuration
 const MQTT_BROKER = 'ws://localhost'; // Use your computer's IP if testing on another device

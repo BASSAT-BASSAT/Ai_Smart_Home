@@ -1,9 +1,7 @@
 import google.generativeai as genai
 import os
 
-# --- IMPORTANT ---
-# Paste your Gemini API key inside the quotes below
-# It's the same key you put in your docker-compose.yml file
+## Paste your Gemini API key below
 API_KEY =""
 
 # Configure the library with your key
@@ -14,8 +12,7 @@ print("--- Querying Google for available models... ---\n")
 try:
     # Iterate through all models available to your API key
     for m in genai.list_models():
-        # The error message mentioned 'generateContent', so let's check
-        # which models actually support that method.
+        
         if 'generateContent' in m.supported_generation_methods:
             print(f"Model Name: {m.name}")
             print("-" * 20)
