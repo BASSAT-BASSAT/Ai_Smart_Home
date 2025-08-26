@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.env
+# Arduino/ESP32 secrets
+iot_C_code/config.h
+# Docker
+*.log
+*.db
+docker-compose.override.yml
+# Node/Web
+node_modules/
+# VSCode
+.vscode/
+# Misc
+.DS_Store
+*.swp

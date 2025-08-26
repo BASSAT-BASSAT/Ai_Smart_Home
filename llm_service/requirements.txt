@@ -1,0 +1,5 @@
+paho-mqtt
+google-generativeai
+langchain
+langchain-google-genai
+supabase

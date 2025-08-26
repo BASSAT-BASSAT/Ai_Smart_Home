@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- We can add more specific dashboard styles here later -->
+    <style>
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 800px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        #mic-button { /* Re-adding styles for our voice button */
+            padding: 15px 25px; border-radius: 50px; border: none; cursor: pointer;
+            background-color: #f44336; color: white; transition: background-color 0.3s;
+        }
+        #mic-button.listening { background-color: #4CAF50; }
+        .control-panel { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <button id="signout-button">Sign Out</button>
+        </div>
+        
+        <p>Welcome, <span id="user-email"></span>!</p>
+        
+        <div class="control-panel">
+            <h2>Voice Control</h2>
+            <p id="command-display">Press the button and speak a command.</p>
+            <button id="mic-button">Start Listening</button>
+        </div>
+
+        <!-- We will add sections for sensor data and logs here later -->
+    </div>
+
+    <!-- Include the Supabase JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Include the MQTT JS library for voice control -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- Include our custom dashboard script -->
+    <script src="dashboard.js"></script>
+</body>
+</html>
