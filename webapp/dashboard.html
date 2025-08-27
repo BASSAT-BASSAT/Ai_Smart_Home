@@ -5,26 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home - Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Dashboard styles -->
     <style>
-        .dashboard-container {
-            display: flex;
-            flex-direction: column;
-            width: 90%;
-            max-width: 800px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-    #mic-button {
-            padding: 15px 25px; border-radius: 50px; border: none; cursor: pointer;
-            background-color: #f44336; color: white; transition: background-color 0.3s;
-        }
+        .dashboard-container { max-width: 800px; }
+        .header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .control-panel { margin-top: 20px; padding: 15px; border-radius: 5px; background-color: #282c34; }
+        
+        #mic-button { padding: 15px 25px; border-radius: 50px; border: none; cursor: pointer; background-color: #f44336; color: white; transition: background-color: 0.3s; }
         #mic-button.listening { background-color: #4CAF50; }
-        .control-panel { margin-top: 30px; }
+
+        .manual-controls .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .manual-controls button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1em;
+        }
+        .btn-on { background-color: #4CAF50; color: white; }
+        .btn-off { background-color: #f44336; color: white; }
+
+        .data-history { margin-top: 30px; text-align: left; }
+        .filter-buttons button { width: auto; margin-right: 10px; background-color: #555; color: white; }
+        .filter-buttons button.active { background-color: #61dafb; color: #282c34; }
+        .data-display { margin-top: 15px; padding: 10px; background-color: #282c34; border-radius: 5px; min-height: 100px; max-height: 300px; overflow-y: auto; }
+        .log-entry { padding-bottom: 5px; margin-bottom: 5px; border-bottom: 1px solid #444; }
+        .log-entry:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -38,18 +46,42 @@
         
         <div class="control-panel">
             <h2>Voice Control</h2>
-            <p id="command-display">Press the button and speak a command.</p>
+            <p id="command-display">Ask a question or give a command.</p>
             <button id="mic-button">Start Listening</button>
         </div>
 
-    <!-- Sensor data and logs section -->
+        <div class="control-panel manual-controls">
+            <h2>Manual Light Control</h2>
+            <div class="button-grid">
+                <button id="btn-light1-on" class="btn-on">Light 1 ON</button>
+                <button id="btn-light1-off" class="btn-off">Light 1 OFF</button>
+                <button id="btn-light2-on" class="btn-on">Light 2 ON</button>
+                <button id="btn-light2-off" class="btn-off">Light 2 OFF</button>
+            </div>
+        </div>
+        <div class="data-history">
+            <hr>
+            <h2>Data History</h2>
+            <div class="filter-buttons">
+                <button id="filter-10m" class="active">Last 10 Mins</button>
+                <button id="filter-1h">Last Hour</button>
+                <button id="filter-24h">Last 24 Hours</button>
+            </div>
+
+            <h3>Sensor Readings</h3>
+            <div id="sensor-data-display" class="data-display">
+                Fetching data...
+            </div>
+
+            <h3>Access Logs</h3>
+            <div id="access-log-display" class="data-display">
+                Fetching data...
+            </div>
+        </div>
     </div>
 
-    <!-- Include the Supabase JS library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Include the MQTT JS library for voice control -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <!-- Include our custom dashboard script -->
     <script src="dashboard.js"></script>
 </body>
 </html>

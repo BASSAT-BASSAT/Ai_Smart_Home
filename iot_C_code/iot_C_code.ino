@@ -1,21 +1,19 @@
+# Include required libraries
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
 #include "LiquidCrystal_I2C.h"
 #include <ESP32Servo.h>
 
-// Configuration
-#include "config.h" // Contains: const char* ssid, password, mqtt_server
+# Load WiFi and MQTT credentials from config.h
+ #include "config.h"
 
-// MQTT Topics
-// Topic this ESP32 will listen to (subscribe)
 const char* VOICE_LIGHTS_TOPIC = "home/lights/voice";
-// Topics this ESP32 will talk on (publish)
 const char* LIGHT_SENSOR_TOPIC = "esp32/sensors/light";
 const char* RAIN_SENSOR_TOPIC = "esp32/sensors/rain";
 const char* DOOR_EVENT_TOPIC = "esp32/events/door";
 
-// Hardware Pin Definitions
+# Define hardware pins
 #define LCD_SDA_PIN 21
 #define LCD_SCL_PIN 22
 #define DOOR_PIR_PIN 33
@@ -26,20 +24,21 @@ const char* DOOR_EVENT_TOPIC = "esp32/events/door";
 #define NIGHT_LIGHT_LED_PIN 27
 #define RAIN_SENSOR_PIN 32
 
-// Global Objects
+# Initialize global objects
 WiFiClient espClient;
 PubSubClient client(espClient);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 Servo doorServo;
 
-// State Management & Configuration
+# Track door state and LCD message
 enum DoorState { CLOSED, OPEN };
 DoorState currentDoorState = CLOSED;
 String currentLcdMessage = "";
-int lightThreshold = 1000; // IMPORTANT: Calibrate this value for your room
+int lightThreshold = 1000;
 unsigned long lastSensorPublishTime = 0;
-const long sensorPublishInterval = 30000; // Publish sensor data every 30 seconds
+const long sensorPublishInterval = 30000;
 
+// Main setup: initialize hardware and connect to WiFi/MQTT
 void setup() {
   Serial.begin(115200);
   lcd.init();
@@ -61,20 +60,23 @@ void setup() {
   Serial.println("\nFull System Ready. Logging to Database.");
 }
 
+  // Main loop: read sensors, control devices, and publish data
 void loop() {
   if (!client.connected()) { reconnect(); }
   client.loop();
 
-  // --- Read ALL sensors ---
+  
+    // Read sensor values
   bool isMotionDetected = (digitalRead(DOOR_PIR_PIN) == LOW);
   int lightValue = analogRead(LDR_PIN);
   bool isRaining = (digitalRead(RAIN_SENSOR_PIN) == LOW);
 
-  // Servo Logic
+  
+    // Control door servo based on motion
   if (isMotionDetected && currentDoorState == CLOSED) {
     doorServo.write(90);
     currentDoorState = OPEN;
-    // Log this event to the database via MQTT
+    
     Serial.println("Publishing door open event (PIR).");
     client.publish(DOOR_EVENT_TOPIC, "opened_by_pir");
   } 
@@ -83,14 +85,16 @@ void loop() {
     currentDoorState = CLOSED;
   }
 
-  // Automatic Night Light Logic
+  
+    // Control night light based on light sensor
   if (lightValue < lightThreshold) {
     digitalWrite(NIGHT_LIGHT_LED_PIN, HIGH);
   } else {
     digitalWrite(NIGHT_LIGHT_LED_PIN, LOW);
   }
 
-  // LCD Logic with Priority
+  
+    // Update LCD message based on priority
   String newMessage = "";
   if (isMotionDetected) { newMessage = "Welcome Home!"; }
   else if (isRaining) { newMessage = "It's Raining!"; }
@@ -102,7 +106,8 @@ void loop() {
     currentLcdMessage = newMessage;
   }
 
-  // Publish all sensor data to Supabase periodically
+  
+    // Periodically publish sensor data to MQTT
   if (millis() - lastSensorPublishTime > sensorPublishInterval) {
     lastSensorPublishTime = millis(); // Reset the timer
 
@@ -118,8 +123,8 @@ void loop() {
   }
 }
 
-// Helper Functions
 
+// Handle incoming MQTT messages for light control
 void callback(char* topic, byte* payload, unsigned int length) {
   String message;
   for (int i = 0; i < length; i++) { message += (char)payload[i]; }
@@ -133,6 +138,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+// Connect to WiFi using credentials
 void setup_wifi() {
   delay(10);
   Serial.println();
@@ -148,6 +154,7 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+// Reconnect to MQTT broker if disconnected
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
