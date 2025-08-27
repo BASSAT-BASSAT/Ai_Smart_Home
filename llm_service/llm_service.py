@@ -1,3 +1,4 @@
+
 import paho.mqtt.client as mqtt
 import os
 import time
@@ -9,16 +10,12 @@ from langchain.tools import tool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from datetime import datetime, timezone
 
-MQTT_BROKER = "mosquitto"
-
-
 # MQTT and Supabase configuration
 MQTT_BROKER = "mosquitto"
 MQTT_PORT = 1883
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-NATURAL_COMMAND_TOPIC = "home/commands/natural"
 # MQTT topics for communication
 NATURAL_COMMAND_TOPIC = "home/commands/natural"
 VOICE_LIGHTS_TOPIC = "home/lights/voice"
@@ -28,12 +25,8 @@ AI_RESPONSE_TOPIC = "home/ai/response"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 print("Supabase & MQTT clients initialized.")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-print("Supabase & MQTT clients initialized.")
 
 # Format timestamps for user-friendly output
-def format_timestamp(timestamp_str: str) -> str:
 def format_timestamp(timestamp_str: str) -> str:
     timestamp = datetime.fromisoformat(timestamp_str).astimezone(timezone.utc)
     absolute_time = timestamp.strftime("%B %d at %I:%M %p UTC")
@@ -109,6 +102,7 @@ def query_database(table_name: str, filters: dict, order_by: str = "created_at",
 tools = [turn_on_light, turn_off_light, query_database]
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest")
 prompt = ChatPromptTemplate.from_messages([
+    ("system",
     """
         You are an advanced smart home assistant. You have tools to control lights and a powerful tool to query a database for historical information.
 
