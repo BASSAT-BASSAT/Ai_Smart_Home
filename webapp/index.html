@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #3a0ca3;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+        }
+        .loading:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">Connecting to Smart Home</div>
+    
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://kxqmvprrpodgonxeikuh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cW12cHJycG9kZ29ueGVpa3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwOTk2MzksImV4cCI6MjA3MTY3NTYzOX0.eqtxurvLupES-c9vrhkjqkcwHyDytvDkttdpGPB_Si0';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Check authentication status
+        async function checkAuth() {
+            const { data, error } = await supabaseClient.auth.getUser();
+            
+            // If authenticated, redirect to dashboard
+            if (data && data.user) {
+                window.location.href = 'dashboard.html';
+            } else {
+                // Not authenticated, redirect to login
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Check authentication on page load
+        checkAuth();
+    </script>
+</body>
+</html>
