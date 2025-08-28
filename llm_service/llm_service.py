@@ -1,4 +1,3 @@
-
 import paho.mqtt.client as mqtt
 import os
 import time
@@ -28,20 +27,32 @@ print("Supabase & MQTT clients initialized.")
 
 # Format timestamps for user-friendly output
 def format_timestamp(timestamp_str: str) -> str:
-    timestamp = datetime.fromisoformat(timestamp_str).astimezone(timezone.utc)
-    absolute_time = timestamp.strftime("%B %d at %I:%M %p UTC")
-    time_since = datetime.now(timezone.utc) - timestamp
-    days = time_since.days
-    hours, remainder = divmod(time_since.seconds, 3600)
-    minutes, _ = divmod(remainder, 60)
-    if days > 1: relative_time = f"{days} days ago"
-    elif days == 1: relative_time = "1 day ago"
-    elif hours > 1: relative_time = f"{hours} hours ago"
-    elif hours == 1: relative_time = "1 hour ago"
-    elif minutes > 1: relative_time = f"{minutes} minutes ago"
-    else: relative_time = "just now"
-    return f"on {absolute_time} (which was {relative_time})."
-
+    """Converts a Supabase timestamp into a human-friendly string."""
+    try:
+        # This is the corrected, more flexible timestamp parsing logic
+        # It handles cases where microseconds might have trailing zeros trimmed.
+        if '.' in timestamp_str and '+' in timestamp_str:
+            time_part, tz_part = timestamp_str.split('+')
+            time_part = time_part.ljust(26, '0') # Pad with zeros to ensure 6 microsecond digits
+            timestamp_str = f"{time_part}+{tz_part}"
+        
+        timestamp = datetime.fromisoformat(timestamp_str).astimezone(timezone.utc)
+        
+        absolute_time = timestamp.strftime("%B %d at %I:%M %p UTC")
+        time_since = datetime.now(timezone.utc) - timestamp
+        days = time_since.days
+        hours, remainder = divmod(time_since.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        
+        if days > 1: relative_time = f"{days} days ago"
+        elif days == 1: relative_time = "1 day ago"
+        elif hours > 1: relative_time = f"{hours} hours ago"
+        elif hours == 1: relative_time = "1 hour ago"
+        elif minutes > 1: relative_time = f"{minutes} minutes ago"
+        else: relative_time = "just a moment ago"
+        return f"on {absolute_time} (which was {relative_time})."
+    except Exception as e:
+        return f"at an unknown time due to a timestamp parsing error: {e}"
 
 # Tool: Turn on a specific light
 @tool
@@ -61,79 +72,86 @@ def turn_off_light(light_number: int) -> str:
     log_data = {"event_source": f"voice_led_{light_number}_off"}; supabase.table('access_logs').insert(log_data).execute()
     return f"OK. I've turned off voice light {light_number}."
 
-# Tool: Query database for historical sensor or access log data
 @tool
-def query_database(table_name: str, filters: dict, order_by: str = "created_at", ascending: bool = False, limit: int = 1) -> str:
-    """
-    Queries the database to find historical data. Use this for ANY question about past events.
-    `table_name` must be either 'sensor_readings' or 'access_logs'.
-    `filters` is a dictionary of columns and values to match.
-    `order_by` is the column to sort by, usually 'created_at'.
-    `ascending` should be True for 'first' events and False for 'last' events.
-    """
-    if isinstance(filters, str):
-        try:
-            filters = json.loads(filters)
-            print(f"DATABASE TOOL: Successfully parsed string filter into dictionary.")
-        except json.JSONDecodeError:
-            return "Error: The provided filter string was not valid JSON."
+def get_environmental_sensor_history(sensor_type: str, sensor_value: str, find_first: bool = False) -> str:
+    """Finds the first or last time an ENVIRONMENTAL SENSOR was in a certain state (e.g., when it was 'dark')."""
+    if sensor_type not in ["light", "rain"]: return "Error: Invalid sensor type."
+    if sensor_value not in ["dark", "bright", "raining", "dry"]: return "Error: Invalid sensor value."
+    
+    is_ascending = find_first
+    response = supabase.table('sensor_readings').select('created_at').eq('sensor_type', sensor_type).eq('sensor_value', sensor_value).order('created_at', desc=not is_ascending).limit(1).execute()
+    
+    if response.data:
+        return f"The {'first' if find_first else 'last'} time the status was '{sensor_value}' was {format_timestamp(response.data[0]['created_at'])}"
+    else:
+        return f"I have no record of the status ever being '{sensor_value}'."
 
-    print(f"DATABASE TOOL: Querying table '{table_name}' with filters: {filters}")
-    try:
-        is_descending = not ascending
-        query = supabase.table(table_name).select('created_at').order(order_by, desc=is_descending).limit(limit)
-        
-        for column, value in filters.items():
-            query = query.eq(column, value)
-        
-        response = query.execute()
+@tool
+def get_device_action_history(event_source: str, find_first: bool = False) -> str:
+    """Finds the first or last time a specific DEVICE ACTION occurred (e.g., when a light was turned on). Also used to check for current events."""
+    valid_sources = ["opened_by_pir", "voice_led_1_on", "voice_led_1_off", "voice_led_2_on", "voice_led_2_off"]
+    if event_source not in valid_sources: return f"Error: I don't know about the event '{event_source}'."
 
-        if response.data:
-            timestamp_str = response.data[0]['created_at']
-            return f"I found a record for that event. It occurred {format_timestamp(timestamp_str)}"
-        else:
-            return f"Sorry, I have no records matching those criteria."
-    except Exception as e:
-        return f"Database error: {str(e)}"
+    is_ascending = find_first
+    response = supabase.table('access_logs').select('created_at').eq('event_source', event_source).order('created_at', desc=not is_ascending).limit(1).execute()
+    
+    if response.data:
+        timestamp_str = response.data[0]['created_at']
+        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        time_since_seconds = (datetime.now(timezone.utc) - timestamp).total_seconds()
 
+        if not find_first and time_since_seconds < 30:
+            return f"Yes, the event '{event_source}' happened just {int(time_since_seconds)} seconds ago."
 
+        return f"The {'first' if find_first else 'last'} time the event '{event_source}' occurred was {format_timestamp(timestamp_str)}"
+    else:
+        return f"I have no record of the event '{event_source}' ever happening."
 
-# Set up LangChain agent with tools and prompt
-tools = [turn_on_light, turn_off_light, query_database]
+tools = [turn_on_light, turn_off_light, get_environmental_sensor_history, get_device_action_history]
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest")
+
 prompt = ChatPromptTemplate.from_messages([
-    ("system",
-    """
-        You are an advanced smart home assistant. You have tools to control lights and a powerful tool to query a database for historical information.
+    ("system", """
+        You are an advanced smart home data analyst. Your goal is to answer user questions by intelligently choosing from a set of tools.
 
-        DATABASE SCHEMA:
-        1. `sensor_readings` table: Records environmental states.
-           - `created_at`: The timestamp of the reading.
-           - `sensor_type`: The type of sensor ('light' or 'rain').
-           - `sensor_value`: The state recorded ('dark', 'bright', 'raining', 'dry').
-        2. `access_logs` table: Records specific device actions.
-           - `created_at`: The timestamp of the action.
-           - `event_source`: What caused the action (e.g., 'opened_by_pir', 'voice_led_1_on', 'voice_led_1_off', etc.).
+        **Tool Guide:**
+        1.  `turn_on_light` / `turn_off_light`: Use these for direct commands to control lights.
+        2.  `get_environmental_sensor_history`: Use this for questions about an environmental STATE.
+            - Keywords: dark, bright, raining, dry.
+            - Example: "When was it last dark?" -> `get_environmental_sensor_history(sensor_type='light', sensor_value='dark')`
+        3.  `get_device_action_history`: Use this for questions about a DEVICE ACTION.
+            - Keywords: light turned on, light turned off, door opened.
+            - Example: "When was light 1 turned on?" -> `get_device_action_history(event_source='voice_led_1_on')`
+            - Example: "Is there motion at the door now?" -> `get_device_action_history(event_source='opened_by_pir')` The tool is smart enough to handle "now".
 
-        YOUR TASK:
-        - For commands to control lights, use `turn_on_light` or `turn_off_light`.
-        - For ANY question about historical data (e.g., "when was," "what was the first," "how about the last"), you MUST use the `query_database` tool.
-        - You must decide which table to query. If they ask about an environmental state like 'dark', query `sensor_readings`. If they ask about a device action like 'light turned on', query `access_logs`.
-        - You must determine the correct `filters`. For "when was it last raining?", the filter is `{{"sensor_type": "rain", "sensor_value": "raining"}}`. For "when was light one turned on?", the filter is `{{"event_source": "voice_led_1_on"}}`.
-        - For questions with "last" or "most recent," set `ascending=False`.
-        - For questions with "first" or "earliest," set `ascending=True`.
-        - Always respond in a friendly, conversational way based on the tool's output.
+        **Your Task:**
+        1.  Analyze the user's question.
+        2.  Decide if it's a command or a data query.
+        3.  If it's a data query, determine if it's about a STATE (use `get_environmental_sensor_history`) or an ACTION (use `get_device_action_history`).
+        4.  Determine if the user is asking for the "first" or "last" event. For "first", set `find_first=True`. For "last" or "now", set `find_first=False`.
+        5.  Construct the correct `event_source` or `sensor_value` from the user's words based on this mapping:
+            - "door opened": 'opened_by_pir'
+            - "light one on": 'voice_led_1_on'
+            - "light one off": 'voice_led_1_off'
+            - "light two on": 'voice_led_2_on'
+            - "light two off": 'voice_led_2_off'
+        6.  Call the correct tool with the correct parameters.
+        7.  Respond in a friendly, conversational way based on the tool's output.
     """),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),
 ])
+
 agent = create_tool_calling_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 # MQTT event handlers
 def on_connect(client, userdata, flags, rc, properties=None):
-    if rc == 0: print("LangChain Agent Service: Connected!"); client.subscribe(NATURAL_COMMAND_TOPIC)
-    else: print("Connection failed")
+    if rc == 0:
+        print("LangChain Agent Service: Connected!")
+        client.subscribe(NATURAL_COMMAND_TOPIC)
+    else:
+        print("Connection failed")
 
 # Handle incoming MQTT messages and route to agent
 def on_message(client, userdata, msg):
@@ -145,7 +163,9 @@ def on_message(client, userdata, msg):
         print(f"< Agent Answer: {final_answer}")
         client.publish(AI_RESPONSE_TOPIC, final_answer)
     except Exception as e:
-        error_message = f"Sorry, an error occurred: {str(e)}"; print(error_message); client.publish(AI_RESPONSE_TOPIC, error_message)
+        error_message = f"Sorry, an error occurred: {str(e)}"
+        print(error_message)
+        client.publish(AI_RESPONSE_TOPIC, error_message)
 
 # Main service loop
 print("LangChain Agent Service: Starting up...")
