@@ -3,13 +3,15 @@ body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
+    align-items: flex-start;
+    padding-top: 50px;
+    min-height: 100vh;
     margin: 0;
     background: radial-gradient(circle at top left, #3a0ca3, #4361ee, #4895ef, #4cc9f0);
     color: #f8f8f8;
     text-align: center;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Floating animated background shapes */
@@ -46,6 +48,7 @@ body::after {
     padding: 40px;
     border-radius: 20px;
     background: rgba(25, 25, 60, 0.6);
+    -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(255,255,255,0.05);
@@ -62,6 +65,7 @@ h1 {
     margin-bottom: 20px;
     background: linear-gradient(90deg, #a78bfa, #4cc9f0);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
 }
@@ -130,6 +134,11 @@ button:hover {
     background: linear-gradient(135deg, #4361ee, #4cc9f0);
     color: white;
     box-shadow: 0 0 15px rgba(67, 97, 238, 0.8);
+}
+#signout-button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    flex: 0 auto;
 }
 #signup-button {
     background: linear-gradient(135deg, #7209b7, #b5179e);
