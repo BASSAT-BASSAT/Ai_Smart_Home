@@ -6,11 +6,9 @@ services:
     image: eclipse-mosquitto:2
     container_name: mosquitto_broker
     restart: unless-stopped
-    # Expose ports to the host machine:
     ports:
-      - "1883:1883"  # Standard MQTT port for the ESP32
-      - "9001:9001"  # WebSocket port for our Web App
-    # Link local folders to the container for configuration and data persistence
+      - "1883:1883"
+      - "9001:9001"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
@@ -18,13 +16,24 @@ services:
 
   # Service 2: The LangChain AI Service (the brain)
   llm_service:
-    # Build a custom image from the Dockerfile in the './llm_service' directory
     build: ./llm_service
     container_name: llm_service
     restart: unless-stopped
-    # Pass environment variables to the Python script
     environment:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - mosquitto
+
+  # Service 3: The NEW Data Logger Service (the ears)
+  data_logger_service:
+    build: ./data_logger  # <--- Point to the new directory
+    container_name: data_logger_service
+    restart: unless-stopped
+    environment:
+      # It also needs access to Supabase
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}
       PYTHONUNBUFFERED: 1
