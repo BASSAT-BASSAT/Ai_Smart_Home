@@ -4,6 +4,7 @@ __pycache__/
 .env
 # Arduino/ESP32 secrets
 iot_C_code/config.h
+iot_C_code/iot_C_code_unfiltered
 # Docker
 *.log
 *.db

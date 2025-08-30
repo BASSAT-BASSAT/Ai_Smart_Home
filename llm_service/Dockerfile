@@ -1,4 +1,3 @@
-
 FROM python:3.9-slim
 
 #the working directory inside the container.
@@ -15,3 +14,4 @@ COPY . .
 
 # Specify the command to run when the container starts.
 CMD ["python", "llm_service.py"]
+

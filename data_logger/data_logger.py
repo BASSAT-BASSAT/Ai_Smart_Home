@@ -5,18 +5,18 @@ import os
 from supabase import create_client, Client
 import json
 
-# --- Configuration ---
+# Configuration
 MQTT_BROKER = "mosquitto"
 MQTT_PORT = 1883
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# --- Topics the ESP32 is publishing to ---
+# Topics the ESP32 is publishing to 
 LIGHT_SENSOR_TOPIC = "esp32/sensors/light"
 RAIN_SENSOR_TOPIC = "esp32/sensors/rain"
 DOOR_EVENT_TOPIC = "esp32/events/door"
 
-# --- Initialization ---
+#Initialization
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     print("Data Logger: Supabase client initialized.")
@@ -27,7 +27,7 @@ except Exception as e:
     exit(1)
 
 
-# --- MQTT Callbacks ---
+# MQTT Callbacks
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print("Data Logger: Connected to MQTT Broker!")
@@ -63,7 +63,7 @@ def on_message(client, userdata, msg):
         print(f"Data Logger: Failed to insert data into Supabase. Error: {e}")
 
 
-# --- Main Execution ---
+# Main Execution
 print("Data Logger Service: Starting up...")
 client.on_connect = on_connect
 client.on_message = on_message

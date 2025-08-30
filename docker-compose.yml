@@ -29,11 +29,11 @@ services:
 
   # Service 3: The NEW Data Logger Service (the ears)
   data_logger_service:
-    build: ./data_logger  # <--- Point to the new directory
+    build: ./data_logger
     container_name: data_logger_service
     restart: unless-stopped
     environment:
-      # It also needs access to Supabase
+      # needs access to Supabase
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}
       PYTHONUNBUFFERED: 1
